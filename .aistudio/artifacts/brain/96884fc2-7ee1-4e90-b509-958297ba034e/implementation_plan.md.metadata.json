@@ -1,0 +1,6 @@
+{
+  "summary":  "Piano di implementazione per la piattaforma di consultazione avanzata del Codice di Diritto Canonico (Codex Iuris Canonici 1983).\nDefinisce l'architettura completa dei 7 Libri, la gerarchia canonica (Libri, Parti, Sezioni, Titoli, Capitoli, Canoni con paragrafi §), la navigazione a flusso continuo per capitoli con salto istantaneo ai canoni, la visualizzazione italiana con scheda/cassetto latino a comparsa, motore di ricerca full-text istantaneo e per numero, strumenti di studio (note, segnalibri, evidenziatore multicolore, cronologia), temi visivi accademici (carta calda avorio, seppia, scuro, focus mode) e compilazione autonoma in singolo file HTML.",
+  "updatedAt":  "2026-09-30T21:29:06.400969744Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}

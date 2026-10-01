@@ -1,0 +1,6 @@
+{
+  "name": "Codex Iuris Canonici",
+  "description": "Una raffinata e professionale piattaforma interattiva per la consultazione e lo studio del Codice di Diritto Canonico (Codex Iuris Canonici), completa di note, ricerche avanzate, segnalibri e riscontri normativi.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
