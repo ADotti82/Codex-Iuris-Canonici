@@ -119,7 +119,7 @@ export const SidebarRight: React.FC<SidebarRightProps> = ({
       />
 
       <aside
-        className={`fixed md:static inset-y-0 right-0 z-50 md:z-0 w-[92vw] max-w-sm sm:max-w-md md:w-80 lg:w-96 h-full border-l flex flex-col flex-shrink-0 select-none overflow-hidden transition-all duration-200 shadow-2xl md:shadow-none ${panelBg}`}
+        className={`fixed md:static inset-y-0 right-0 z-50 md:z-0 w-full sm:w-[90vw] max-w-sm sm:max-w-md md:w-80 lg:w-96 h-full pt-[env(safe-area-inset-top)] pb-[max(0.75rem,env(safe-area-inset-bottom))] border-l flex flex-col flex-shrink-0 select-none overflow-hidden transition-all duration-200 shadow-2xl md:shadow-none ${panelBg}`}
       >
       {/* Header and Tab Bar */}
       <div className="border-b border-inherit p-3 flex flex-col gap-2 shrink-0">

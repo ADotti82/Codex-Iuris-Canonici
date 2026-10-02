@@ -16,9 +16,11 @@ import {
   Type,
   Menu,
   Sliders,
-  X
+  X,
+  Smartphone
 } from "lucide-react";
 import { ThemeMode, FontSize } from "../types";
+import { PWAInstallButton } from "./PWAInstallButton";
 
 interface HeaderProps {
   currentBookNumber: string;
@@ -116,7 +118,7 @@ export const Header: React.FC<HeaderProps> = ({
     : "hover:bg-stone-100 text-stone-600 hover:text-stone-900";
 
   return (
-    <header className={`h-14 border-b flex items-center justify-between px-3 md:px-4 flex-shrink-0 z-30 select-none transition-colors ${headerBg}`}>
+    <header className={`h-[calc(3.5rem+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] border-b flex items-center justify-between px-3 md:px-4 flex-shrink-0 z-30 select-none transition-colors ${headerBg}`}>
       {/* ========================================================= */}
       {/* MOBILE-ONLY HEADER VIEW                                  */}
       {/* ========================================================= */}
@@ -175,9 +177,9 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
                 <div className="flex flex-col min-w-0">
                   <span className="font-serif font-bold text-xs tracking-tight truncate">
-                    Codex Iuris Canonici
+                    CIC 1983
                   </span>
-                  <span className="text-[10px] opacity-70 font-sans truncate">
+                  <span className="text-[10px] opacity-75 font-sans font-medium text-blue-800 dark:text-blue-300 truncate">
                     {activeCanonLabel || currentBookNumber}
                   </span>
                 </div>
@@ -186,11 +188,15 @@ export const Header: React.FC<HeaderProps> = ({
 
             {/* Right: Quick actions on mobile */}
             <div className="flex items-center gap-1 shrink-0">
+              {/* PWA Install Button */}
+              <PWAInstallButton variant="header" />
+
               {/* Quick Jump */}
               <button
                 onClick={onOpenQuickJump}
                 className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer text-stone-700 dark:text-gray-200"
                 title="Vai al canone per numero"
+                aria-label="Cerca per numero canone"
               >
                 <Hash className="w-4 h-4 text-blue-700 dark:text-blue-400" />
               </button>
@@ -200,6 +206,7 @@ export const Header: React.FC<HeaderProps> = ({
                 onClick={() => setIsMobileSearchActive(true)}
                 className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer text-stone-700 dark:text-gray-200"
                 title="Cerca nel Codice"
+                aria-label="Cerca"
               >
                 <Search className="w-4 h-4" />
               </button>
@@ -209,6 +216,7 @@ export const Header: React.FC<HeaderProps> = ({
                 onClick={onOpenMobileSettings}
                 className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer text-stone-700 dark:text-gray-200"
                 title="Impostazioni tema e carattere"
+                aria-label="Impostazioni"
               >
                 <Sliders className="w-4 h-4" />
               </button>
@@ -370,6 +378,9 @@ export const Header: React.FC<HeaderProps> = ({
               Notte
             </button>
           </div>
+
+          {/* PWA Install Button */}
+          <PWAInstallButton variant="header" />
 
           {/* Focus Mode toggle */}
           <button

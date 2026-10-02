@@ -4,8 +4,9 @@
  */
 
 import React from "react";
-import { X, Type, Download, HelpCircle, Palette, Sparkles, Check } from "lucide-react";
+import { X, Type, Download, HelpCircle, Palette, Sparkles, Check, Smartphone } from "lucide-react";
 import { ThemeMode, FontSize } from "../types";
+import { PWAInstallButton } from "./PWAInstallButton";
 
 interface MobileSettingsModalProps {
   isOpen: boolean;
@@ -57,7 +58,7 @@ export const MobileSettingsModal: React.FC<MobileSettingsModalProps> = ({
       onClick={onClose}
     >
       <div
-        className={`w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl border p-5 sm:p-6 shadow-2xl space-y-5 max-h-[85vh] overflow-y-auto ${modalBg}`}
+        className={`w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl border p-5 sm:p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto ${modalBg}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between pb-2 border-b border-inherit">
@@ -130,8 +131,11 @@ export const MobileSettingsModal: React.FC<MobileSettingsModalProps> = ({
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="space-y-2 pt-2 border-t border-inherit">
+        {/* Actions & PWA Install */}
+        <div className="space-y-2.5 pt-2 border-t border-inherit">
+          {/* PWA Install Button / Card */}
+          <PWAInstallButton variant="card" />
+
           <button
             onClick={() => {
               onDownloadOffline();

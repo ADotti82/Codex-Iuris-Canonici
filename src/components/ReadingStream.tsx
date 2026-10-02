@@ -92,11 +92,11 @@ export const ReadingStream: React.FC<ReadingStreamProps> = ({
   const isDark = theme === "dark";
   const isSepia = theme === "sepia";
 
-  // Font size multiplier
-  const textBodySize = fontSize === "sm" ? "text-sm leading-relaxed" 
-    : fontSize === "base" ? "text-base leading-relaxed" 
-    : fontSize === "lg" ? "text-lg leading-loose" 
-    : "text-xl leading-loose";
+  // Font size multiplier with mobile responsiveness
+  const textBodySize = fontSize === "sm" ? "text-xs sm:text-sm leading-relaxed" 
+    : fontSize === "base" ? "text-[15px] sm:text-base leading-relaxed" 
+    : fontSize === "lg" ? "text-base sm:text-lg leading-relaxed" 
+    : "text-lg sm:text-xl leading-relaxed";
 
   const containerBg = isDark ? "bg-[#0B0F19] text-gray-200" 
     : isSepia ? "bg-[#FAF7F0] text-[#2C241B]" 
@@ -136,8 +136,8 @@ export const ReadingStream: React.FC<ReadingStreamProps> = ({
   };
 
   return (
-    <main className={`flex-1 overflow-y-auto px-3 sm:px-6 md:px-8 py-4 md:py-6 select-text transition-colors pb-28 md:pb-8 ${containerBg}`}>
-      <div className="max-w-3xl mx-auto space-y-4 md:space-y-6">
+    <main className={`flex-1 overflow-y-auto px-2.5 sm:px-6 md:px-8 py-3 sm:py-6 select-text transition-colors pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-8 ${containerBg}`}>
+      <div className="max-w-3xl mx-auto space-y-3 sm:space-y-4 md:space-y-6">
         
         {/* Search Mode Header or Normal Title Header */}
         {isSearchActive ? (
@@ -189,19 +189,19 @@ export const ReadingStream: React.FC<ReadingStreamProps> = ({
                 key={canon.id}
                 id={`canon-card-${canon.id}`}
                 onClick={() => onSelectCanon(canon.id)}
-                className={`relative rounded-xl border p-5 md:p-6 transition-all duration-200 shadow-xs ${cardBg} ${
+                className={`relative rounded-xl border p-3.5 sm:p-5 md:p-6 transition-all duration-200 shadow-xs ${cardBg} ${
                   isActive ? `${cardActiveBorder} shadow-md` : "hover:border-stone-300 dark:hover:border-gray-700"
                 } ${getHighlightBg(canonHighlight)}`}
               >
                 {/* Active Indicator Pin */}
                 {isActive && (
-                  <div className="absolute -left-1 top-6 w-2 h-6 bg-blue-700 dark:bg-blue-400 rounded-r" />
+                  <div className="absolute -left-1 top-4 sm:top-6 w-1.5 sm:w-2 h-6 bg-blue-700 dark:bg-blue-400 rounded-r" />
                 )}
 
                 {/* Canon Header Card */}
-                <div className="flex items-center justify-between pb-3 border-b border-inherit mb-3 gap-2">
+                <div className="flex items-center justify-between pb-2.5 border-b border-inherit mb-3 gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="font-serif font-bold text-base md:text-lg text-blue-900 dark:text-blue-300 tracking-tight">
+                    <span className="font-serif font-bold text-base sm:text-lg text-blue-900 dark:text-blue-300 tracking-tight">
                       {canon.label}
                     </span>
                     {canon.rubrica && (
@@ -224,7 +224,7 @@ export const ReadingStream: React.FC<ReadingStreamProps> = ({
                 </div>
 
                 {/* Italian Normative Text (Main Reading) */}
-                <div className={`font-serif ${textBodySize} space-y-3`}>
+                <div className={`font-serif ${textBodySize} space-y-2.5 sm:space-y-3`}>
                   {canon.paragraphs && canon.paragraphs.length > 0 ? (
                     canon.paragraphs.map((p, pIdx) => (
                       <div key={pIdx} className="flex gap-2">
@@ -249,27 +249,46 @@ export const ReadingStream: React.FC<ReadingStreamProps> = ({
                   )}
                 </div>
 
-                {/* Inline Latin Collapsible (If user opened inline) */}
+                {/* Inline Latin Collapsible (Parallel authentic Latin view) */}
                 {isInlineLatin && (
-                  <div className="mt-4 pt-3 border-t border-dashed border-inherit bg-stone-50/50 dark:bg-gray-800/40 rounded-lg p-3 text-xs font-serif italic text-stone-700 dark:text-gray-300 space-y-2">
-                    <div className="flex items-center justify-between text-[11px] uppercase font-sans font-bold text-stone-500 tracking-wider">
-                      <span>Testo Ufficiale Latino</span>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); toggleInlineLatin(canon.id); }}
-                        className="text-stone-400 hover:text-stone-700 dark:hover:text-gray-100 cursor-pointer"
-                      >
-                        Chiudi
-                      </button>
+                  <div className="mt-3.5 pt-3 border-t border-dashed border-inherit bg-amber-50/50 dark:bg-gray-800/60 rounded-xl p-3 sm:p-4 text-xs sm:text-sm font-serif italic text-stone-800 dark:text-gray-200 space-y-2 border-l-4 border-l-amber-500 shadow-xs">
+                    <div className="flex items-center justify-between text-[11px] uppercase font-sans font-bold text-amber-900 dark:text-amber-300 tracking-wider">
+                      <span className="flex items-center gap-1.5">
+                        <Languages className="w-3.5 h-3.5" />
+                        <span>Testo Ufficiale Latino</span>
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const fullLatin = canon.paragraphs && canon.paragraphs.length > 0
+                              ? `${canon.label}\n` + canon.paragraphs.map(p => `${p.num ? p.num + " " : ""}${p.latinSub}`).join("\n")
+                              : `${canon.label}\n${canon.latinText}`;
+                            navigator.clipboard.writeText(fullLatin);
+                          }}
+                          className="text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 cursor-pointer flex items-center gap-1"
+                          title="Copia testo latino"
+                        >
+                          <Copy className="w-3 h-3" />
+                          <span className="normal-case font-normal text-[10px]">Copia</span>
+                        </button>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); toggleInlineLatin(canon.id); }}
+                          className="text-stone-400 hover:text-stone-700 dark:hover:text-gray-100 cursor-pointer"
+                        >
+                          Chiudi
+                        </button>
+                      </div>
                     </div>
                     {canon.paragraphs && canon.paragraphs.length > 0 ? (
                       canon.paragraphs.map((p, pIdx) => (
-                        <p key={pIdx}>
-                          {p.num && <strong className="font-sans not-italic mr-1">{p.num}</strong>}
+                        <p key={pIdx} className="leading-relaxed">
+                          {p.num && <strong className="font-sans not-italic mr-1.5 text-blue-900 dark:text-blue-300">{p.num}</strong>}
                           {p.latinSub}
                         </p>
                       ))
                     ) : (
-                      <p>{canon.latinText}</p>
+                      <p className="leading-relaxed">{canon.latinText}</p>
                     )}
                   </div>
                 )}
@@ -320,18 +339,21 @@ export const ReadingStream: React.FC<ReadingStreamProps> = ({
                 )}
 
                 {/* Action Toolbar on Bottom */}
-                <div className="mt-4 pt-3 border-t border-inherit flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div className="mt-3.5 pt-2.5 border-t border-inherit flex flex-wrap items-center justify-between gap-1.5 text-xs">
                   {/* Left action tools */}
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
                     {/* Latin toggle */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        onToggleLatinInspector(canon.id);
                         toggleInlineLatin(canon.id);
                       }}
-                      className="flex items-center gap-1 px-2 py-1 rounded hover:bg-black/5 dark:hover:bg-white/5 font-sans font-medium transition-colors cursor-pointer"
-                      title="Visualizza testo latino"
+                      className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg font-sans font-medium transition-colors cursor-pointer min-h-[36px] active:scale-95 ${
+                        isInlineLatin
+                          ? "bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200 font-semibold"
+                          : "hover:bg-black/5 dark:hover:bg-white/5"
+                      }`}
+                      title="Visualizza testo latino a fronte"
                     >
                       <Languages className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                       <span>Latino</span>
@@ -344,27 +366,27 @@ export const ReadingStream: React.FC<ReadingStreamProps> = ({
                           e.stopPropagation();
                           setColorPickerOpenCanonId(colorPickerOpenCanonId === canon.id ? null : canon.id);
                         }}
-                        className={`flex items-center gap-1 px-2 py-1 rounded hover:bg-black/5 dark:hover:bg-white/5 font-sans font-medium transition-colors cursor-pointer ${
-                          canonHighlight ? "text-amber-600 dark:text-amber-400" : ""
+                        className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 font-sans font-medium transition-colors cursor-pointer min-h-[36px] active:scale-95 ${
+                          canonHighlight ? "text-amber-600 dark:text-amber-400 font-semibold" : ""
                         }`}
                         title="Evidenzia canone"
                       >
                         <Highlighter className="w-3.5 h-3.5" />
-                        <span>Evidenzia</span>
+                        <span className="hidden xs:inline">Evidenzia</span>
                       </button>
 
                       {/* Color Picker Flyout */}
                       {colorPickerOpenCanonId === canon.id && (
                         <div 
                           onClick={(e) => e.stopPropagation()}
-                          className="absolute left-0 bottom-full mb-1 z-30 p-2 rounded-lg bg-white dark:bg-gray-800 shadow-lg border border-stone-200 dark:border-gray-700 flex items-center gap-2"
+                          className="absolute left-0 bottom-full mb-1.5 z-40 p-2 rounded-xl bg-white dark:bg-gray-800 shadow-xl border border-stone-200 dark:border-gray-700 flex items-center gap-2 animate-in fade-in zoom-in-95 duration-100"
                         >
                           <button
                             onClick={() => {
                               onSetHighlight(canon.id, canon.label, "yellow");
                               setColorPickerOpenCanonId(null);
                             }}
-                            className="w-5 h-5 rounded-full bg-yellow-400 hover:scale-110 transition-transform cursor-pointer border border-yellow-500 shadow-xs"
+                            className="w-6 h-6 rounded-full bg-yellow-400 hover:scale-110 active:scale-90 transition-transform cursor-pointer border border-yellow-500 shadow-xs"
                             title="Giallo Studio"
                           />
                           <button
@@ -372,7 +394,7 @@ export const ReadingStream: React.FC<ReadingStreamProps> = ({
                               onSetHighlight(canon.id, canon.label, "green");
                               setColorPickerOpenCanonId(null);
                             }}
-                            className="w-5 h-5 rounded-full bg-emerald-400 hover:scale-110 transition-transform cursor-pointer border border-emerald-500 shadow-xs"
+                            className="w-6 h-6 rounded-full bg-emerald-400 hover:scale-110 active:scale-90 transition-transform cursor-pointer border border-emerald-500 shadow-xs"
                             title="Verde Dottrinale"
                           />
                           <button
@@ -380,7 +402,7 @@ export const ReadingStream: React.FC<ReadingStreamProps> = ({
                               onSetHighlight(canon.id, canon.label, "blue");
                               setColorPickerOpenCanonId(null);
                             }}
-                            className="w-5 h-5 rounded-full bg-sky-400 hover:scale-110 transition-transform cursor-pointer border border-sky-500 shadow-xs"
+                            className="w-6 h-6 rounded-full bg-sky-400 hover:scale-110 active:scale-90 transition-transform cursor-pointer border border-sky-500 shadow-xs"
                             title="Blu Giurisprudenziale"
                           />
                           <button
@@ -388,7 +410,7 @@ export const ReadingStream: React.FC<ReadingStreamProps> = ({
                               onSetHighlight(canon.id, canon.label, "red");
                               setColorPickerOpenCanonId(null);
                             }}
-                            className="w-5 h-5 rounded-full bg-rose-400 hover:scale-110 transition-transform cursor-pointer border border-rose-500 shadow-xs"
+                            className="w-6 h-6 rounded-full bg-rose-400 hover:scale-110 active:scale-90 transition-transform cursor-pointer border border-rose-500 shadow-xs"
                             title="Rosso Vincolante"
                           />
                           {canonHighlight && (
@@ -400,7 +422,7 @@ export const ReadingStream: React.FC<ReadingStreamProps> = ({
                               className="p-1 rounded text-stone-400 hover:text-stone-700 dark:hover:text-gray-200 cursor-pointer"
                               title="Rimuovi evidenziazione"
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
+                              <Trash2 className="w-4 h-4" />
                             </button>
                           )}
                         </div>
@@ -413,29 +435,29 @@ export const ReadingStream: React.FC<ReadingStreamProps> = ({
                         e.stopPropagation();
                         onOpenNoteEditor(canon.id);
                       }}
-                      className="flex items-center gap-1 px-2 py-1 rounded hover:bg-black/5 dark:hover:bg-white/5 font-sans font-medium transition-colors cursor-pointer"
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 font-sans font-medium transition-colors cursor-pointer min-h-[36px] active:scale-95"
                       title="Aggiungi o modifica nota"
                     >
                       <FileText className="w-3.5 h-3.5 text-stone-500" />
-                      <span>{canonNotes.length > 0 ? "Note" : "Annota"}</span>
+                      <span>{canonNotes.length > 0 ? `Note (${canonNotes.length})` : "Annota"}</span>
                     </button>
                   </div>
 
                   {/* Right action tools */}
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1 sm:gap-1.5">
                     {/* Bookmark */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         onToggleBookmark(canon, currentTitle.latinText);
                       }}
-                      className={`flex items-center gap-1 px-2 py-1 rounded hover:bg-black/5 dark:hover:bg-white/5 font-sans font-medium transition-colors cursor-pointer ${
+                      className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 font-sans font-medium transition-colors cursor-pointer min-h-[36px] active:scale-95 ${
                         isBookmarked ? "text-amber-600 dark:text-amber-400 font-semibold" : ""
                       }`}
                       title={isBookmarked ? "Rimuovi dai segnalibri" : "Aggiungi ai segnalibri"}
                     >
                       <Star className={`w-3.5 h-3.5 ${isBookmarked ? "fill-current" : ""}`} />
-                      <span className="hidden sm:inline">{isBookmarked ? "Salvato" : "Segnalibro"}</span>
+                      <span className="hidden xs:inline">{isBookmarked ? "Salvato" : "Segnalibro"}</span>
                     </button>
 
                     {/* Copy citation */}
@@ -444,7 +466,7 @@ export const ReadingStream: React.FC<ReadingStreamProps> = ({
                         e.stopPropagation();
                         onCopyCitation(canon);
                       }}
-                      className="flex items-center gap-1 px-2 py-1 rounded hover:bg-black/5 dark:hover:bg-white/5 font-sans font-medium transition-colors cursor-pointer"
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 font-sans font-medium transition-colors cursor-pointer min-h-[36px] active:scale-95"
                       title="Copia citazione formale negli appunti"
                     >
                       <Copy className="w-3.5 h-3.5 text-stone-500" />

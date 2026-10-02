@@ -29,7 +29,9 @@ import { SidebarRight } from "./components/SidebarRight";
 import { QuickJumpModal } from "./components/QuickJumpModal";
 import { ShortcutsModal } from "./components/ShortcutsModal";
 import { MobileSettingsModal } from "./components/MobileSettingsModal";
-import { Layers, Hash, ChevronLeft, ChevronRight, Languages, Sliders } from "lucide-react";
+import { OfflineIndicator } from "./components/OfflineIndicator";
+import { Layers, Hash, ChevronLeft, ChevronRight, Languages, Sliders, Smartphone, BookOpen } from "lucide-react";
+import { usePWAInstall } from "./hooks/usePWAInstall";
 
 export default function App() {
   // --- Persistent User Preferences ---
@@ -607,9 +609,42 @@ export default function App() {
         )}
       </div>
 
+      {/* Floating Mobile Thumb Navigation (Previous / Next Canon) */}
+      <div className="md:hidden fixed bottom-[calc(4.25rem+env(safe-area-inset-bottom))] left-0 right-0 px-3 flex items-center justify-between pointer-events-none z-20">
+        <button
+          onClick={handlePrevCanon}
+          disabled={!hasPrev}
+          className={`pointer-events-auto flex items-center gap-1.5 px-3.5 py-2 rounded-full shadow-lg backdrop-blur-md border text-xs font-semibold transition-all active:scale-95 cursor-pointer ${
+            hasPrev
+              ? theme === "dark"
+                ? "bg-gray-900/90 text-gray-200 border-gray-700 shadow-black/40"
+                : theme === "sepia"
+                ? "bg-[#FAF7F0]/95 text-[#2C241B] border-[#D9CDB8] shadow-amber-900/10"
+                : "bg-white/95 text-stone-800 border-stone-200 shadow-stone-900/10"
+              : "opacity-0 pointer-events-none"
+          }`}
+          title="Canone precedente"
+        >
+          <ChevronLeft className="w-4 h-4 text-blue-700 dark:text-blue-400" />
+          <span>Prec</span>
+        </button>
+
+        <button
+          onClick={handleNextCanon}
+          disabled={!hasNext}
+          className={`pointer-events-auto flex items-center gap-1.5 px-4 py-2 rounded-full shadow-lg backdrop-blur-md text-xs font-semibold transition-all active:scale-95 cursor-pointer bg-blue-900/95 dark:bg-blue-700/95 text-white shadow-blue-900/30 ${
+            hasNext ? "" : "opacity-0 pointer-events-none"
+          }`}
+          title="Canone successivo"
+        >
+          <span>Succ</span>
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+
       {/* Mobile Bottom Navigation Bar (Hidden on desktop) */}
       <nav
-        className={`md:hidden border-t flex items-center justify-around px-2 py-2 fixed bottom-0 left-0 right-0 z-30 select-none shadow-lg backdrop-blur-md pb-[max(0.5rem,env(safe-area-inset-bottom))] ${
+        className={`md:hidden border-t flex items-center justify-around px-1 py-1 fixed bottom-0 left-0 right-0 z-30 select-none shadow-lg backdrop-blur-md pb-[max(0.6rem,env(safe-area-inset-bottom))] h-[calc(3.75rem+env(safe-area-inset-bottom))] ${
           theme === "dark"
             ? "bg-[#111827]/95 border-gray-800 text-gray-200"
             : theme === "sepia"
@@ -620,61 +655,53 @@ export default function App() {
         {/* Indice Libri */}
         <button
           onClick={() => setIsMobileMenuOpen(true)}
-          className="flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg text-center hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer"
+          className="flex flex-col items-center justify-center gap-0.5 min-w-[54px] py-1 rounded-lg text-center hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer"
         >
           <Layers className="w-5 h-5 text-blue-700 dark:text-blue-400" />
-          <span className="text-[10px] font-medium">Indice</span>
+          <span className="text-[10px] font-medium tracking-tight">Indice</span>
         </button>
 
         {/* Salto Canone (G) */}
         <button
           onClick={() => setIsQuickJumpOpen(true)}
-          className="flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg text-center hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer"
+          className="flex flex-col items-center justify-center gap-0.5 min-w-[54px] py-1 rounded-lg text-center hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer"
         >
           <Hash className="w-5 h-5 text-blue-700 dark:text-blue-400" />
-          <span className="text-[10px] font-medium">Canone</span>
+          <span className="text-[10px] font-medium tracking-tight">Canone</span>
         </button>
 
-        {/* Canone Precedente */}
-        <button
-          onClick={handlePrevCanon}
-          disabled={!hasPrev}
-          className="flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg text-center hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
-        >
-          <ChevronLeft className="w-5 h-5" />
-          <span className="text-[10px] font-medium">Prec</span>
-        </button>
-
-        {/* Canone Successivo */}
-        <button
-          onClick={handleNextCanon}
-          disabled={!hasNext}
-          className="flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg text-center hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
-        >
-          <ChevronRight className="w-5 h-5" />
-          <span className="text-[10px] font-medium">Succ</span>
-        </button>
-
-        {/* Studio / Latino */}
+        {/* Studio / Latino / Note */}
         <button
           onClick={() => setIsRightPanelOpen((prev) => !prev)}
-          className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg text-center hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer ${
+          className={`flex flex-col items-center justify-center gap-0.5 min-w-[54px] py-1 rounded-lg text-center hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer ${
             isRightPanelOpen ? "text-blue-700 dark:text-blue-400 font-semibold" : ""
           }`}
         >
           <Languages className="w-5 h-5" />
-          <span className="text-[10px] font-medium">Latino</span>
+          <span className="text-[10px] font-medium tracking-tight">Studio</span>
+        </button>
+
+        {/* Installa App PWA */}
+        <button
+          onClick={() => setIsMobileSettingsOpen(true)}
+          className="flex flex-col items-center justify-center gap-0.5 min-w-[54px] py-1 rounded-lg text-center hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer"
+        >
+          <Smartphone className="w-5 h-5 text-blue-700 dark:text-blue-400" />
+          <span className="text-[10px] font-medium tracking-tight">Installa</span>
         </button>
 
         {/* Impostazioni / Aspetto */}
         <button
           onClick={() => setIsMobileSettingsOpen(true)}
-          className="flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg text-center hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer"
+          className="flex flex-col items-center justify-center gap-0.5 min-w-[54px] py-1 rounded-lg text-center hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer"
         >
           <Sliders className="w-5 h-5" />
-          <span className="text-[10px] font-medium">Aspetto</span>
+          <span className="text-[10px] font-medium tracking-tight">Aspetto</span>
         </button>
       </nav>
+
+      {/* Offline Status Indicator */}
+      <OfflineIndicator />
 
       {/* Floating Toast Notification */}
       {toastMessage && (

@@ -5,7 +5,8 @@
 
 import React, { useState } from "react";
 import { Book, Title, Canon, ThemeMode } from "../types";
-import { ChevronDown, ChevronRight, BookOpen, Layers, BookmarkCheck, FileText, X } from "lucide-react";
+import { ChevronDown, ChevronRight, BookOpen, Layers, BookmarkCheck, FileText, X, Smartphone } from "lucide-react";
+import { PWAInstallButton } from "./PWAInstallButton";
 
 interface SidebarLeftProps {
   books: Book[];
@@ -96,7 +97,8 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({
       <aside 
         className={`
           fixed md:static inset-y-0 left-0 z-50 md:z-0
-          w-[85vw] max-w-xs md:w-72 lg:w-80 h-full
+          w-[88vw] max-w-xs sm:max-w-sm md:w-72 lg:w-80 h-full
+          pt-[env(safe-area-inset-top)] pb-[max(0.5rem,env(safe-area-inset-bottom))]
           border-r flex flex-col flex-shrink-0 select-none overflow-hidden transition-transform duration-200
           ${isOpenMobile ? "translate-x-0 shadow-2xl" : "-translate-x-full md:translate-x-0"}
           ${sidebarBg}
@@ -260,6 +262,11 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({
             );
           })}
         </nav>
+
+        {/* PWA Install Promo in Mobile Drawer */}
+        <div className="p-2 border-t border-inherit">
+          <PWAInstallButton variant="mobile-action" />
+        </div>
 
         {/* Bottom status stats */}
         <div className="p-2.5 border-t border-inherit text-[10px] font-mono opacity-60 flex items-center justify-between shrink-0">
