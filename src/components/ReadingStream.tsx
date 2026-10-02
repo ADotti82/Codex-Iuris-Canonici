@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { 
   Canon, 
   Title, 
@@ -52,6 +52,11 @@ interface ReadingStreamProps {
   onNextTitle?: () => void;
   hasPrevTitle?: boolean;
   hasNextTitle?: boolean;
+  onPrevCanon?: () => void;
+  onNextCanon?: () => void;
+  hasPrevCanon?: boolean;
+  hasNextCanon?: boolean;
+  onVisibleCanonChange?: (canonId: string) => void;
 }
 
 export const ReadingStream: React.FC<ReadingStreamProps> = ({
@@ -78,9 +83,76 @@ export const ReadingStream: React.FC<ReadingStreamProps> = ({
   onNextTitle,
   hasPrevTitle,
   hasNextTitle,
+  onPrevCanon,
+  onNextCanon,
+  hasPrevCanon,
+  hasNextCanon,
+  onVisibleCanonChange,
 }) => {
+  const containerRef = useRef<HTMLElement>(null);
   const [inlineLatinOpen, setInlineLatinOpen] = useState<Record<string, boolean>>({});
   const [colorPickerOpenCanonId, setColorPickerOpenCanonId] = useState<string | null>(null);
+
+  // Synchronize visible canon when user manually scrolls
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || !onVisibleCanonChange) return;
+
+    let ticking = false;
+    const handleScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
+
+        const activeList = isSearchActive && searchResults.length > 0 
+          ? searchResults.map(r => r.canon) 
+          : canons;
+
+        // Edge case: scrolled to the very top
+        if (container.scrollTop < 60 && activeList.length > 0) {
+          const firstId = activeList[0].id;
+          if (firstId !== activeCanonId) {
+            onVisibleCanonChange(firstId);
+          }
+          return;
+        }
+
+        // Edge case: scrolled to the very bottom
+        if (container.scrollHeight - container.scrollTop - container.clientHeight < 60 && activeList.length > 0) {
+          const lastId = activeList[activeList.length - 1].id;
+          if (lastId !== activeCanonId) {
+            onVisibleCanonChange(lastId);
+          }
+          return;
+        }
+
+        const containerRect = container.getBoundingClientRect();
+        const articles = container.querySelectorAll("article[id^='canon-card-']");
+        let closestCanonId: string | null = null;
+        let minDistance = Infinity;
+        const focalLine = containerRect.top + 90;
+
+        articles.forEach((art) => {
+          const rect = art.getBoundingClientRect();
+          if (rect.bottom > containerRect.top + 30 && rect.top < containerRect.bottom - 30) {
+            const dist = Math.abs(rect.top - focalLine);
+            if (dist < minDistance) {
+              minDistance = dist;
+              closestCanonId = art.id.replace("canon-card-", "");
+            }
+          }
+        });
+
+        if (closestCanonId && closestCanonId !== activeCanonId) {
+          onVisibleCanonChange(closestCanonId);
+        }
+      });
+    };
+
+    container.addEventListener("scroll", handleScroll, { passive: true });
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, [activeCanonId, onVisibleCanonChange, canons, isSearchActive, searchResults]);
 
   const toggleInlineLatin = (canonId: string) => {
     setInlineLatinOpen((prev) => ({
@@ -136,7 +208,11 @@ export const ReadingStream: React.FC<ReadingStreamProps> = ({
   };
 
   return (
-    <main className={`flex-1 overflow-y-auto px-2.5 sm:px-6 md:px-8 py-3 sm:py-6 select-text transition-colors pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-8 ${containerBg}`}>
+    <main
+      ref={containerRef}
+      id="reading-stream-container"
+      className={`flex-1 overflow-y-auto px-2.5 sm:px-6 md:px-8 py-3 sm:py-6 select-text transition-colors pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-8 ${containerBg}`}
+    >
       <div className="max-w-3xl mx-auto space-y-3 sm:space-y-4 md:space-y-6">
         
         {/* Search Mode Header or Normal Title Header */}
@@ -189,7 +265,7 @@ export const ReadingStream: React.FC<ReadingStreamProps> = ({
                 key={canon.id}
                 id={`canon-card-${canon.id}`}
                 onClick={() => onSelectCanon(canon.id)}
-                className={`relative rounded-xl border p-3.5 sm:p-5 md:p-6 transition-all duration-200 shadow-xs ${cardBg} ${
+                className={`relative rounded-xl border p-3.5 sm:p-5 md:p-6 transition-all duration-200 shadow-xs scroll-mt-4 sm:scroll-mt-6 ${cardBg} ${
                   isActive ? `${cardActiveBorder} shadow-md` : "hover:border-stone-300 dark:hover:border-gray-700"
                 } ${getHighlightBg(canonHighlight)}`}
               >
@@ -479,31 +555,57 @@ export const ReadingStream: React.FC<ReadingStreamProps> = ({
           })}
         </div>
 
-        {/* Previous and Next Chapter / Title Footer Controls */}
+        {/* Direct Canon & Title Footer Navigation */}
         {!isSearchActive && (
-          <nav className="pt-8 pb-12 border-t border-inherit flex items-center justify-between gap-4">
-            {hasPrevTitle && onPrevTitle ? (
+          <div className="pt-6 pb-12 border-t border-inherit space-y-4">
+            {/* Quick Prev / Next Canon Jump Cards */}
+            <div className="flex items-center justify-between gap-3">
               <button
-                onClick={onPrevTitle}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-inherit hover:bg-black/5 dark:hover:bg-white/5 font-serif text-sm transition-colors cursor-pointer"
+                onClick={onPrevCanon}
+                disabled={!hasPrevCanon}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border border-inherit hover:bg-black/5 dark:hover:bg-white/5 active:scale-98 disabled:opacity-25 disabled:pointer-events-none text-xs font-serif font-semibold transition cursor-pointer"
+                title="Vai al canone precedente"
               >
-                <ChevronLeft className="w-4 h-4" />
-                <span>Titolo precedente</span>
+                <ChevronLeft className="w-4 h-4 text-blue-700 dark:text-blue-400" />
+                <span>Canone precedente</span>
               </button>
-            ) : (
-              <div />
-            )}
 
-            {hasNextTitle && onNextTitle && (
               <button
-                onClick={onNextTitle}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-blue-900 dark:bg-blue-700 hover:bg-blue-800 text-white font-serif text-sm shadow-xs transition-colors cursor-pointer ml-auto"
+                onClick={onNextCanon}
+                disabled={!hasNextCanon}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-blue-900 dark:bg-blue-700 hover:bg-blue-800 active:scale-98 disabled:opacity-25 disabled:pointer-events-none text-white text-xs font-serif font-semibold shadow-xs transition cursor-pointer"
+                title="Vai al canone successivo"
               >
-                <span>Titolo successivo</span>
+                <span>Canone successivo</span>
                 <ChevronRight className="w-4 h-4" />
               </button>
-            )}
-          </nav>
+            </div>
+
+            {/* Title / Rubric Navigation */}
+            <nav className="pt-3 border-t border-dashed border-inherit flex items-center justify-between gap-2 text-xs">
+              {hasPrevTitle && onPrevTitle ? (
+                <button
+                  onClick={onPrevTitle}
+                  className="flex items-center gap-1.5 py-1.5 px-2.5 rounded-lg opacity-75 hover:opacity-100 font-sans transition-colors cursor-pointer"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                  <span className="truncate max-w-[140px] sm:max-w-none">Titolo prec.</span>
+                </button>
+              ) : (
+                <div />
+              )}
+
+              {hasNextTitle && onNextTitle && (
+                <button
+                  onClick={onNextTitle}
+                  className="flex items-center gap-1.5 py-1.5 px-2.5 rounded-lg opacity-75 hover:opacity-100 font-sans transition-colors cursor-pointer ml-auto"
+                >
+                  <span className="truncate max-w-[140px] sm:max-w-none">Titolo succ.</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </nav>
+          </div>
         )}
       </div>
     </main>

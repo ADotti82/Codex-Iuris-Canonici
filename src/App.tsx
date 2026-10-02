@@ -233,39 +233,122 @@ export default function App() {
     }
   };
 
+  const isProgrammaticScrollRef = useRef(false);
+
+  // Smoothly scroll the central reading container to target canon card
+  const scrollToCanonCard = (canonId: string) => {
+    isProgrammaticScrollRef.current = true;
+    let attempts = 0;
+    const maxAttempts = 25;
+
+    const tryScroll = () => {
+      const el = document.getElementById(`canon-card-${canonId}`);
+      const container = document.getElementById("reading-stream-container");
+      if (el && container) {
+        try {
+          el.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        } catch {
+          const containerRect = container.getBoundingClientRect();
+          const elRect = el.getBoundingClientRect();
+          const targetScrollTop = container.scrollTop + (elRect.top - containerRect.top) - 16;
+          container.scrollTo({
+            top: Math.max(0, targetScrollTop),
+            behavior: "smooth",
+          });
+        }
+
+        el.classList.remove("canon-active-pulse");
+        void el.offsetWidth;
+        el.classList.add("canon-active-pulse");
+
+        setTimeout(() => {
+          isProgrammaticScrollRef.current = false;
+        }, 600);
+      } else if (attempts < maxAttempts) {
+        attempts++;
+        setTimeout(tryScroll, 35);
+      } else {
+        isProgrammaticScrollRef.current = false;
+      }
+    };
+
+    requestAnimationFrame(tryScroll);
+  };
+
   // Select a Canon and scroll it smoothly into view
   const handleSelectCanon = (canonId: string) => {
     const target = CANON_BY_ID_MAP[canonId];
     if (target) {
+      const isDifferentTitle = target.titleId !== activeTitleId;
       setActiveBookId(target.bookId);
       setActiveTitleId(target.titleId);
       setActiveCanonId(target.id);
       recordHistory(target);
 
-      setTimeout(() => {
-        const el = document.getElementById(`canon-card-${target.id}`);
-        if (el) {
-          el.scrollIntoView({ behavior: "smooth", block: "center" });
-          el.classList.remove("canon-active-pulse");
-          void el.offsetWidth; // trigger reflow
-          el.classList.add("canon-active-pulse");
+      if (isDifferentTitle) {
+        const container = document.getElementById("reading-stream-container");
+        if (container) {
+          container.scrollTop = 0;
         }
-      }, 80);
+      }
+      scrollToCanonCard(target.id);
     }
   };
 
-  // Jump to next / prev canon
+  // Update active canon from user continuous scrolling without disrupting touch
+  const handleVisibleCanonChange = (canonId: string) => {
+    if (isProgrammaticScrollRef.current) return;
+    const target = CANON_BY_ID_MAP[canonId];
+    if (target && target.id !== activeCanonId) {
+      setActiveCanonId(target.id);
+    }
+  };
+
+  // Jump to next / prev canon (handles search mode, boundary fallbacks, and toasts)
   const handlePrevCanon = () => {
-    if (hasPrev) {
-      const prevCanon = ALL_CANONS_LIST[activeCanonIndex - 1];
+    if (isSearchActive && searchResults.length > 0) {
+      const searchIndex = searchResults.findIndex((r) => r.canon.id === activeCanonId);
+      if (searchIndex > 0) {
+        const prev = searchResults[searchIndex - 1].canon;
+        handleSelectCanon(prev.id);
+        showToast(`${prev.label} (${searchIndex}/${searchResults.length} risultati)`);
+        return;
+      }
+    }
+    const currentIndex = ALL_CANONS_LIST.findIndex((c) => c.id === activeCanonId);
+    if (currentIndex > 0) {
+      const prevCanon = ALL_CANONS_LIST[currentIndex - 1];
       handleSelectCanon(prevCanon.id);
+      showToast(`${prevCanon.label} (${currentIndex}/${ALL_CANONS_LIST.length})`);
+    } else if (currentIndex === -1 && ALL_CANONS_LIST.length > 0) {
+      handleSelectCanon(ALL_CANONS_LIST[0].id);
+    } else {
+      showToast("Sei all'inizio del Codice (Can. 1)");
     }
   };
 
   const handleNextCanon = () => {
-    if (hasNext) {
-      const nextCanon = ALL_CANONS_LIST[activeCanonIndex + 1];
+    if (isSearchActive && searchResults.length > 0) {
+      const searchIndex = searchResults.findIndex((r) => r.canon.id === activeCanonId);
+      if (searchIndex >= 0 && searchIndex < searchResults.length - 1) {
+        const next = searchResults[searchIndex + 1].canon;
+        handleSelectCanon(next.id);
+        showToast(`${next.label} (${searchIndex + 2}/${searchResults.length} risultati)`);
+        return;
+      }
+    }
+    const currentIndex = ALL_CANONS_LIST.findIndex((c) => c.id === activeCanonId);
+    if (currentIndex >= 0 && currentIndex < ALL_CANONS_LIST.length - 1) {
+      const nextCanon = ALL_CANONS_LIST[currentIndex + 1];
       handleSelectCanon(nextCanon.id);
+      showToast(`${nextCanon.label} (${currentIndex + 2}/${ALL_CANONS_LIST.length})`);
+    } else if (currentIndex === -1 && ALL_CANONS_LIST.length > 0) {
+      handleSelectCanon(ALL_CANONS_LIST[0].id);
+    } else {
+      showToast("Sei alla fine del Codice (Can. 1752)");
     }
   };
 
@@ -576,6 +659,11 @@ export default function App() {
           onNextTitle={handleNextTitle}
           hasPrevTitle={hasPrevTitle}
           hasNextTitle={hasNextTitle}
+          onPrevCanon={handlePrevCanon}
+          onNextCanon={handleNextCanon}
+          hasPrevCanon={hasPrev}
+          hasNextCanon={hasNext}
+          onVisibleCanonChange={handleVisibleCanonChange}
         />
 
         {/* Right Study & Latin Workbench (Hidden in Focus Mode) */}
@@ -609,40 +697,7 @@ export default function App() {
         )}
       </div>
 
-      {/* Floating Mobile Thumb Navigation (Previous / Next Canon) */}
-      <div className="md:hidden fixed bottom-[calc(4.25rem+env(safe-area-inset-bottom))] left-0 right-0 px-3 flex items-center justify-between pointer-events-none z-20">
-        <button
-          onClick={handlePrevCanon}
-          disabled={!hasPrev}
-          className={`pointer-events-auto flex items-center gap-1.5 px-3.5 py-2 rounded-full shadow-lg backdrop-blur-md border text-xs font-semibold transition-all active:scale-95 cursor-pointer ${
-            hasPrev
-              ? theme === "dark"
-                ? "bg-gray-900/90 text-gray-200 border-gray-700 shadow-black/40"
-                : theme === "sepia"
-                ? "bg-[#FAF7F0]/95 text-[#2C241B] border-[#D9CDB8] shadow-amber-900/10"
-                : "bg-white/95 text-stone-800 border-stone-200 shadow-stone-900/10"
-              : "opacity-0 pointer-events-none"
-          }`}
-          title="Canone precedente"
-        >
-          <ChevronLeft className="w-4 h-4 text-blue-700 dark:text-blue-400" />
-          <span>Prec</span>
-        </button>
-
-        <button
-          onClick={handleNextCanon}
-          disabled={!hasNext}
-          className={`pointer-events-auto flex items-center gap-1.5 px-4 py-2 rounded-full shadow-lg backdrop-blur-md text-xs font-semibold transition-all active:scale-95 cursor-pointer bg-blue-900/95 dark:bg-blue-700/95 text-white shadow-blue-900/30 ${
-            hasNext ? "" : "opacity-0 pointer-events-none"
-          }`}
-          title="Canone successivo"
-        >
-          <span>Succ</span>
-          <ChevronRight className="w-4 h-4" />
-        </button>
-      </div>
-
-      {/* Mobile Bottom Navigation Bar (Hidden on desktop) */}
+      {/* Mobile Bottom Navigation Bar (Thumb ergonomic controls) */}
       <nav
         className={`md:hidden border-t flex items-center justify-around px-1 py-1 fixed bottom-0 left-0 right-0 z-30 select-none shadow-lg backdrop-blur-md pb-[max(0.6rem,env(safe-area-inset-bottom))] h-[calc(3.75rem+env(safe-area-inset-bottom))] ${
           theme === "dark"
@@ -652,51 +707,67 @@ export default function App() {
             : "bg-white/95 border-stone-200 text-[#1C1917]"
         }`}
       >
-        {/* Indice Libri */}
+        {/* Canone Precedente (Tasto sinistro pollice) */}
+        <button
+          onClick={handlePrevCanon}
+          disabled={!hasPrev}
+          className="flex flex-col items-center justify-center gap-0.5 min-w-[54px] py-1 px-1 rounded-xl text-center hover:bg-black/5 dark:hover:bg-white/5 active:scale-90 disabled:opacity-25 disabled:pointer-events-none transition-all cursor-pointer touch-manipulation"
+          title="Canone precedente"
+          aria-label="Canone precedente"
+        >
+          <div className="w-8 h-6 flex items-center justify-center text-blue-800 dark:text-blue-300">
+            <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
+          </div>
+          <span className="text-[10px] font-bold tracking-tight text-blue-900 dark:text-blue-200">Prec</span>
+        </button>
+
+        {/* Indice Libri e Titoli */}
         <button
           onClick={() => setIsMobileMenuOpen(true)}
-          className="flex flex-col items-center justify-center gap-0.5 min-w-[54px] py-1 rounded-lg text-center hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer"
+          className="flex flex-col items-center justify-center gap-0.5 min-w-[50px] py-1 px-1 rounded-xl text-center hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer touch-manipulation"
+          title="Apri indice dei libri e titoli"
         >
-          <Layers className="w-5 h-5 text-blue-700 dark:text-blue-400" />
+          <Layers className="w-5 h-5 text-stone-600 dark:text-gray-300" />
           <span className="text-[10px] font-medium tracking-tight">Indice</span>
         </button>
 
-        {/* Salto Canone (G) */}
+        {/* Salto rapido Canone (visualizza canone corrente) */}
         <button
           onClick={() => setIsQuickJumpOpen(true)}
-          className="flex flex-col items-center justify-center gap-0.5 min-w-[54px] py-1 rounded-lg text-center hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer"
+          className="flex flex-col items-center justify-center gap-0.5 min-w-[62px] py-1 px-2 rounded-xl text-center bg-blue-900/10 dark:bg-blue-500/15 border border-blue-900/20 dark:border-blue-400/30 hover:bg-blue-900/20 active:scale-95 transition-all cursor-pointer touch-manipulation shadow-2xs"
+          title="Tocca per saltare a qualsiasi canone (1-1752)"
         >
-          <Hash className="w-5 h-5 text-blue-700 dark:text-blue-400" />
-          <span className="text-[10px] font-medium tracking-tight">Canone</span>
+          <div className="flex items-center gap-1 text-blue-900 dark:text-blue-300 font-serif font-bold text-xs">
+            <Hash className="w-3.5 h-3.5" />
+            <span className="truncate max-w-[48px]">{activeCanon ? activeCanon.number : ""}</span>
+          </div>
+          <span className="text-[9px] font-semibold text-blue-800 dark:text-blue-300 uppercase tracking-wider">Vai a</span>
         </button>
 
         {/* Studio / Latino / Note */}
         <button
           onClick={() => setIsRightPanelOpen((prev) => !prev)}
-          className={`flex flex-col items-center justify-center gap-0.5 min-w-[54px] py-1 rounded-lg text-center hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer ${
-            isRightPanelOpen ? "text-blue-700 dark:text-blue-400 font-semibold" : ""
+          className={`flex flex-col items-center justify-center gap-0.5 min-w-[50px] py-1 px-1 rounded-xl text-center hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer touch-manipulation ${
+            isRightPanelOpen ? "text-blue-700 dark:text-blue-400 font-semibold" : "text-stone-600 dark:text-gray-300"
           }`}
+          title="Studio del testo latino, fonti e note personali"
         >
           <Languages className="w-5 h-5" />
           <span className="text-[10px] font-medium tracking-tight">Studio</span>
         </button>
 
-        {/* Installa App PWA */}
+        {/* Canone Successivo (Tasto destro pollice) */}
         <button
-          onClick={() => setIsMobileSettingsOpen(true)}
-          className="flex flex-col items-center justify-center gap-0.5 min-w-[54px] py-1 rounded-lg text-center hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer"
+          onClick={handleNextCanon}
+          disabled={!hasNext}
+          className="flex flex-col items-center justify-center gap-0.5 min-w-[54px] py-1 px-1 rounded-xl text-center hover:bg-black/5 dark:hover:bg-white/5 active:scale-90 disabled:opacity-25 disabled:pointer-events-none transition-all cursor-pointer touch-manipulation"
+          title="Canone successivo"
+          aria-label="Canone successivo"
         >
-          <Smartphone className="w-5 h-5 text-blue-700 dark:text-blue-400" />
-          <span className="text-[10px] font-medium tracking-tight">Installa</span>
-        </button>
-
-        {/* Impostazioni / Aspetto */}
-        <button
-          onClick={() => setIsMobileSettingsOpen(true)}
-          className="flex flex-col items-center justify-center gap-0.5 min-w-[54px] py-1 rounded-lg text-center hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer"
-        >
-          <Sliders className="w-5 h-5" />
-          <span className="text-[10px] font-medium tracking-tight">Aspetto</span>
+          <div className="w-8 h-6 flex items-center justify-center text-blue-800 dark:text-blue-300">
+            <ChevronRight className="w-5 h-5 stroke-[2.5]" />
+          </div>
+          <span className="text-[10px] font-bold tracking-tight text-blue-900 dark:text-blue-200">Succ</span>
         </button>
       </nav>
 

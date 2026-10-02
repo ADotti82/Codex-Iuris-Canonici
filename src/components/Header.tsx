@@ -161,50 +161,57 @@ export const Header: React.FC<HeaderProps> = ({
           /* Normal mobile top bar */
           <>
             {/* Left: Menu button + Brand */}
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center gap-1.5 min-w-0">
               <button
                 onClick={onOpenMobileMenu}
-                className="p-2 -ml-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-transform cursor-pointer shrink-0"
+                className="p-1.5 -ml-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-transform cursor-pointer shrink-0"
                 title="Apri indice dei libri e titoli"
                 aria-label="Menu"
               >
                 <Menu className="w-5 h-5 text-blue-900 dark:text-blue-300" />
               </button>
 
-              <div className="flex items-center gap-1.5 min-w-0">
-                <div className="w-6 h-6 rounded bg-[#1E3A8A] flex items-center justify-center text-white font-serif font-bold text-[10px] tracking-wider shadow-xs shrink-0">
-                  CIC
-                </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="font-serif font-bold text-xs tracking-tight truncate">
-                    CIC 1983
-                  </span>
-                  <span className="text-[10px] opacity-75 font-sans font-medium text-blue-800 dark:text-blue-300 truncate">
-                    {activeCanonLabel || currentBookNumber}
-                  </span>
-                </div>
+              {/* Prev / Current Canon / Next Nav in Mobile Header */}
+              <div className="flex items-center rounded-lg border border-stone-200 dark:border-gray-700 bg-stone-100/80 dark:bg-gray-800/80 p-0.5 min-w-0 shadow-2xs">
+                <button
+                  onClick={onPrevCanon}
+                  disabled={!hasPrev}
+                  className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-white dark:hover:bg-gray-700 active:scale-90 transition disabled:opacity-20 disabled:pointer-events-none cursor-pointer text-blue-900 dark:text-blue-300 shrink-0 touch-manipulation"
+                  title="Canone precedente"
+                  aria-label="Canone precedente"
+                >
+                  <ChevronLeft className="w-4.5 h-4.5" />
+                </button>
+
+                <button
+                  onClick={onOpenQuickJump}
+                  className="px-2.5 py-1 text-xs font-serif font-bold text-blue-950 dark:text-blue-200 truncate max-w-[100px] xs:max-w-[130px] sm:max-w-[160px] text-center cursor-pointer active:scale-95 transition hover:underline touch-manipulation"
+                  title="Tocca per saltare a qualsiasi canone (1-1752)"
+                >
+                  {activeCanonLabel || currentBookNumber}
+                </button>
+
+                <button
+                  onClick={onNextCanon}
+                  disabled={!hasNext}
+                  className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-white dark:hover:bg-gray-700 active:scale-90 transition disabled:opacity-20 disabled:pointer-events-none cursor-pointer text-blue-900 dark:text-blue-300 shrink-0 touch-manipulation"
+                  title="Canone successivo"
+                  aria-label="Canone successivo"
+                >
+                  <ChevronRight className="w-4.5 h-4.5" />
+                </button>
               </div>
             </div>
 
             {/* Right: Quick actions on mobile */}
-            <div className="flex items-center gap-1 shrink-0">
+            <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
               {/* PWA Install Button */}
               <PWAInstallButton variant="header" />
-
-              {/* Quick Jump */}
-              <button
-                onClick={onOpenQuickJump}
-                className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer text-stone-700 dark:text-gray-200"
-                title="Vai al canone per numero"
-                aria-label="Cerca per numero canone"
-              >
-                <Hash className="w-4 h-4 text-blue-700 dark:text-blue-400" />
-              </button>
 
               {/* Search trigger */}
               <button
                 onClick={() => setIsMobileSearchActive(true)}
-                className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer text-stone-700 dark:text-gray-200"
+                className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer text-stone-700 dark:text-gray-200"
                 title="Cerca nel Codice"
                 aria-label="Cerca"
               >
@@ -214,7 +221,7 @@ export const Header: React.FC<HeaderProps> = ({
               {/* Settings / Appearance trigger */}
               <button
                 onClick={onOpenMobileSettings}
-                className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer text-stone-700 dark:text-gray-200"
+                className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer text-stone-700 dark:text-gray-200"
                 title="Impostazioni tema e carattere"
                 aria-label="Impostazioni"
               >
